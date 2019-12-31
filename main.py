@@ -1,14 +1,28 @@
 import turrent_driver as turrent
 import time
+import logging
 
-turrent.standby(True)
+logging.basicConfig(filename = 'debug.log',
+                    level = logging.DEBUG,
+                    format = '%(asctime)s:%(levelname)-8s:%(name)s:%(message)s:%(filename)s:%(lineno)s',
+                    filemode = 'w')
+
+my_servo = turrent.Servo()
+my_shooter = turrent.Shooter()
+
+my_servo.standby(True)
 time.sleep(1)
-turrent.test(True)
+my_servo.set_angle(-90)
+my_shooter.shoot()
 time.sleep(1)
-turrent.test(False)
+my_servo.set_angle(0)
+my_shooter.shoot()
 time.sleep(1)
-turrent.test(True)
+my_servo.set_angle(90)
+my_shooter.shoot()
 time.sleep(1)
-turrent.test(False)
+my_servo.set_angle(-90)
+my_shooter.shoot()
 time.sleep(1)
-turrent.standby(False)
+my_servo.standby(False)
+my_shooter.turn_off()
