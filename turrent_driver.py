@@ -1,6 +1,7 @@
 import time
 import pigpio
 import logging
+import threading
 
 logger = logging.getLogger(__name__)
 pi = pigpio.pi()
@@ -40,8 +41,8 @@ class Servo:
         self.command_conversion_factor = (self.max_command - self.min_command) / (self.servo_max_angle - self.servo_min_angle)
     
         # Sweep parameters
-        self.sweep_speed = 50 #deg/s
-        self.sweep_delta_time = 0.2 #[ss]
+        self.sweep_speed = 15 # deg/s
+        self.sweep_delta_time = 0.2 # [ss]
         self.positive_sweep_direction = True #Start direction
         self.sweep_angle_delta = self.sweep_speed * self.sweep_delta_time # Angle sweep step size
 
@@ -76,7 +77,15 @@ class Servo:
             time.sleep(0.1) # allow time to reset angle
             pi.set_servo_pulsewidth(self.control_pin, 0) # turn off
 
-    def iterate_sweep(self):
+    def toggle_sweep(self, arg_start_stop):
+        if arg_start_stop:
+            ticker = threading.Event()
+            while not ticker.wait(self.sweep_delta_time):
+                self.__iterate_sweep()
+
+
+
+    def __iterate_sweep(self):
         tmp_angle = self.current_angle
         if self.positive_sweep_direction:
             tmp_angle += self.sweep_angle_delta

@@ -26,3 +26,7 @@ my_shooter.shoot()
 time.sleep(1)
 my_servo.standby(False)
 my_shooter.turn_off()
+
+time.sleep(2)
+my_servo.standby(True)
+my_servo.toggle_sweep(True)
