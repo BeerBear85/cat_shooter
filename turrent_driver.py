@@ -19,6 +19,7 @@ class Shooter(threading.Thread):
 
         pi.set_mode(self.control_pin, pigpio.OUTPUT)  # Set GPIO pin as output
 
+        self.turn_off()
         self.shoot_event = threading.Event()
         self.start()
 
@@ -32,6 +33,7 @@ class Shooter(threading.Thread):
     def run(self):
         while True:
             self.shoot_event.wait()
+            self.shoot_event.clear()
             pi.write(self.control_pin, 1)
             time.sleep(self.shoot_duration)
             pi.write(self.control_pin, 0)
