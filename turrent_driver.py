@@ -8,7 +8,7 @@ pi = pigpio.pi()
 
 if not pi.connected:
     print("No connection the to Raspberry IO ports")
-    exit(-1)
+    #exit(-1)
 
 class Shooter:
     def __init__(self):
@@ -26,9 +26,11 @@ class Shooter:
         pi.write(self.control_pin, 0)
 
 
-class Servo:
+class Servo(threading.Thread):
     def __init__(self):
-        self.current_angle = 0
+        threading.Thread.__init__(self)
+
+        # Range paramerets
         self.user_max_negative_angle = -45
         self.user_max_positive_angle = 45
         
@@ -41,16 +43,21 @@ class Servo:
         self.command_conversion_factor = (self.max_command - self.min_command) / (self.servo_max_angle - self.servo_min_angle)
     
         # Sweep parameters
-        self.sweep_speed = 15 # deg/s
-        self.sweep_delta_time = 0.2 # [ss]
+        self.sweep_speed = 20 # deg/s
+        self.sweep_delta_time = 1.0 # [s]
         self.positive_sweep_direction = True #Start direction
         self.sweep_angle_delta = self.sweep_speed * self.sweep_delta_time # Angle sweep step size
 
-        #Parameter check
+        # Parameter check
         if (self.user_max_negative_angle < self.servo_min_angle) or \
             (self.user_max_positive_angle > self.servo_max_angle):
             print("Illegal angle parameters!")
             exit(-1)
+
+        # Member variables
+        self.current_angle = 0
+        self.sweep_on = False
+        self.enable_thread_run = True
 
     def set_angle(self, arg_angle):
         tmp_angle = arg_angle
@@ -71,18 +78,22 @@ class Servo:
         
     def standby(self, arg_standby):
         if arg_standby:
+            self.enable_thread_run = True
+            self.start()  # start thread
             self.setAngle(0)
         else:
+            self.enable_thread_run = False
             self.setAngle(0)
             time.sleep(0.1) # allow time to reset angle
             pi.set_servo_pulsewidth(self.control_pin, 0) # turn off
 
     def toggle_sweep(self, arg_start_stop):
         if arg_start_stop:
-            ticker = threading.Event()
-            while not ticker.wait(self.sweep_delta_time):
-                self.__iterate_sweep()
-
+            print("Starting sweep")
+            self.sweep_on = True
+        else:
+            print("Sweep off")
+            self.sweep_on = False
 
 
     def __iterate_sweep(self):
@@ -98,3 +109,11 @@ class Servo:
             self.positive_sweep_direction = true
 
         self.set_angle(tmp_angle)
+
+    # Function run by thread start()
+    def run(self):
+        while self.enable_thread_run:
+            if self.sweep_on:
+                self.__iterate_sweep()
+
+            time.sleep(self.sweep_delta_time)
