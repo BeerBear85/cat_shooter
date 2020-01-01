@@ -58,6 +58,9 @@ class Servo(threading.Thread):
         self.current_angle = 0
         self.sweep_on = False
         self.enable_thread_run = True
+        
+        # start thread
+        self.start()
 
     def set_angle(self, arg_angle):
         tmp_angle = arg_angle
@@ -79,11 +82,10 @@ class Servo(threading.Thread):
     def standby(self, arg_standby):
         if arg_standby:
             self.enable_thread_run = True
-            self.start()  # start thread
-            self.setAngle(0)
+            self.set_angle(0)
         else:
             self.enable_thread_run = False
-            self.setAngle(0)
+            self.set_angle(0)
             time.sleep(0.1) # allow time to reset angle
             pi.set_servo_pulsewidth(self.control_pin, 0) # turn off
 
@@ -103,10 +105,10 @@ class Servo(threading.Thread):
         else:
             tmp_angle -= self.sweep_angle_delta
 
-        if mCurrentAngle >= self.user_max_positive_angle:
+        if self.current_angle >= self.user_max_positive_angle:
             self.positive_sweep_direction = False
-        elif mCurrentAngle <= self.user_max_negative_angle:
-            self.positive_sweep_direction = true
+        elif self.current_angle <= self.user_max_negative_angle:
+            self.positive_sweep_direction = True
 
         self.set_angle(tmp_angle)
 
